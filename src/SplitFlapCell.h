@@ -21,7 +21,11 @@ public:
   SplitFlapCell();
   ~SplitFlapCell();
 
-  void begin(TFT_eSPI* tft, int x, int y);
+  // tileW/tileH default to the full 48×72 asset size.  Pass smaller values to
+  // render a downscaled tile (source bitmaps are sampled by nearest-neighbour).
+  // fullSeq=true uses the Solari ' '→A→…→Z→0→…→9→' ' cycle; false = digits only.
+  void begin(TFT_eSPI* tft, int x, int y,
+             int tileW = TILE_W, int tileH = TILE_H, bool fullSeq = false);
 
   // Set target character.  If animate=false, jumps instantly with no sprite work.
   void setChar(char c, bool animate = true);
@@ -36,18 +40,22 @@ private:
   TFT_eSPI*    _tft    = nullptr;
   TFT_eSprite* _sprite = nullptr;
   int  _x = 0, _y = 0;
+  int  _tileW = TILE_W, _tileH = TILE_H, _tileHalf = TILE_HALF;
+  bool _fullSeq = false;
 
-  char     _currentChar = ' ';  // character currently displayed / animating from
-  char     _targetChar  = ' ';  // character we are animating toward
+  char     _currentChar = ' ';
+  char     _targetChar  = ' ';
 
-  int      _animPhase = 0;      // 0 = idle, 1 = phase1 (top falls), 2 = phase2 (bottom rises)
-  int      _animStep  = 0;      // step within current phase (0 .. FLAP_STEPS-1)
-  uint32_t _nextStepMs = 0;     // millis() timestamp for next animation step
+  int      _animPhase = 0;
+  int      _animStep  = 0;
+  uint32_t _nextStepMs = 0;
 
   // ── helpers ──────────────────────────────────────────────────────────────
 
-  // Next character in the clock flip sequence: ' '→0→1→…→9→0 (wraps).
-  static char nextInSeq(char c);
+  // Digits-only cycle: ' '→0→1→…→9→0 (wraps).
+  static char nextInSeqDigit(char c);
+  // Full Solari cycle: ' '→A→…→Z→0→…→9→' '.
+  static char nextInSeqFull(char c);
 
   // Render helpers — all write to _sprite and call pushSprite.
   void renderIdle();

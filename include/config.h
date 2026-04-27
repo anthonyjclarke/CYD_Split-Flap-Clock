@@ -1,16 +1,12 @@
 #pragma once
 
-// ── Demo mode ─────────────────────────────────────────────────────────────────
-// When defined: skips WiFi/NTP and randomly flips digits to show the animation.
-// Comment out to run as a real clock.
-#define DEMO_MODE
-constexpr uint32_t DEMO_CHANGE_MS = 2500;  // ms between random digit changes
-
 // ── WiFi ─────────────────────────────────────────────────────────────────────
 #define WIFI_AP_NAME "SplitFlapClock"
 
 // ── Timezone ──────────────────────────────────────────────────────────────────
 #define TIMEZONE "Australia/Sydney"
+constexpr bool USE_24_HOUR_TIME = false;
+constexpr bool RUN_STARTUP_SELF_TEST = true;
 
 // ── Backlight ─────────────────────────────────────────────────────────────────
 constexpr uint32_t BACKLIGHT_FREQ    = 5000;
@@ -24,17 +20,43 @@ constexpr int TILE_H    = 72;
 constexpr int TILE_HALF = 36;
 constexpr int TILE_GAP  = 8;   // gap between tiles in pixels
 
-// 5-tile layout (H0 H1 : M0 M1) centred on 320×240 landscape.
-// Total content: 5×48 + 4×8 = 272 px → left margin = (320–272)/2 = 24 px
-constexpr int CELL_Y     = 84;   // (240 – 72) / 2
-constexpr int CELL_X_H0  = 24;
-constexpr int CELL_X_H1  = 80;   // 24 + 48 + 8
-constexpr int CELL_X_COL = 136;  // 80 + 48 + 8
-constexpr int CELL_X_M0  = 192;  // 136 + 48 + 8
-constexpr int CELL_X_M1  = 248;  // 192 + 48 + 8
+// 8-tile layout (H0 H1 : M0 M1 : S0 S1) centred on 320×240 landscape.
+// Tiles keep the original 72 px height and are scaled narrower to fit.
+constexpr int TIME_CHARS    = 8;
+constexpr int TIME_DIGITS   = 6;
+constexpr int TIME_TILE_W   = 34;
+constexpr int TIME_TILE_H   = TILE_H;
+constexpr int TIME_TILE_GAP = 4;
+constexpr int CELL_Y        = 76;
+constexpr int TIME_X0       = (320 - (TIME_CHARS * TIME_TILE_W + (TIME_CHARS - 1) * TIME_TILE_GAP)) / 2;
 
 // Screen background — matches the tile background colour (0x0841 ≈ RGB 8,8,8)
 constexpr uint16_t SCREEN_BG = 0x0841;
+
+// ── Text tile layout (half-size tiles for day/date rows) ──────────────────────
+// Source bitmaps are always 48×72; these tiles are nearest-neighbour scaled.
+constexpr int TEXT_TILE_W   = TILE_W / 2;   // 24 px
+constexpr int TEXT_TILE_H   = TILE_H / 2;   // 36 px
+constexpr int TEXT_TILE_GAP = 4;            // gap between text tiles
+constexpr int TEXT_ROW_GAP  = 6;
+
+// Day-of-week row: always 9 cells — shorter names are centre-padded with spaces.
+constexpr int DOW_CELLS = 9;
+constexpr int DOW_TILE_W   = 32;
+constexpr int DOW_TILE_H   = 48;
+constexpr int DOW_TILE_GAP = 3;
+constexpr int DOW_X0       = (320 - (DOW_CELLS * DOW_TILE_W + (DOW_CELLS - 1) * DOW_TILE_GAP)) / 2;
+constexpr int DOW_Y        = (CELL_Y - DOW_TILE_H) / 2;
+
+// AM/PM row: 2 cells, blank in 24-hour mode.
+constexpr int AMPM_CELLS = 2;
+constexpr int AMPM_X0    = (320 - (AMPM_CELLS * TEXT_TILE_W + (AMPM_CELLS - 1) * TEXT_TILE_GAP)) / 2;
+constexpr int AMPM_Y     = CELL_Y + TIME_TILE_H + TEXT_ROW_GAP;
+
+// Date row: 11 cells — always "DD MMM YYYY" (exactly 11 chars).
+constexpr int DATE_CELLS = 11;
+constexpr int DATE_X0    = (320 - (DATE_CELLS * TEXT_TILE_W + (DATE_CELLS - 1) * TEXT_TILE_GAP)) / 2;
+constexpr int DATE_Y     = AMPM_Y + TEXT_TILE_H + TEXT_ROW_GAP;
 
 // ── Animation timing ─────────────────────────────────────────────────────────
 // Each flip has two phases (old-top falls, new-bottom rises), FLAP_STEPS each.
