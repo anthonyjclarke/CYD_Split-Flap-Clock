@@ -16,13 +16,17 @@ SplitFlapCell::~SplitFlapCell() {
   }
 }
 
-void SplitFlapCell::begin(TFT_eSPI* tft, int x, int y) {
-  _tft = tft;
-  _x   = x;
-  _y   = y;
+void SplitFlapCell::begin(TFT_eSPI* tft, int x, int y, int tileW, int tileH, bool fullSeq) {
+  _tft      = tft;
+  _x        = x;
+  _y        = y;
+  _tileW    = tileW;
+  _tileH    = tileH;
+  _tileHalf = tileH / 2;
+  _fullSeq  = fullSeq;
   _sprite = new TFT_eSprite(tft);
   _sprite->setColorDepth(16);
-  _sprite->createSprite(TILE_W, TILE_H);
+  _sprite->createSprite(_tileW, _tileH);
   renderIdle();
 }
 
@@ -68,7 +72,7 @@ void SplitFlapCell::tick(uint32_t nowMs) {
   } else {
     // ── Phase 2: new bottom rises into place ─────────────────────────────────
     if (_animStep >= FLAP_STEPS) {
-      _currentChar = nextInSeq(_currentChar);
+      _currentChar = _fullSeq ? nextInSeqFull(_currentChar) : nextInSeqDigit(_currentChar);
       if (_currentChar == _targetChar) {
         _animPhase = 0;
         renderIdle();
@@ -86,10 +90,18 @@ void SplitFlapCell::tick(uint32_t nowMs) {
 
 // ── Static helpers ────────────────────────────────────────────────────────────
 
-char SplitFlapCell::nextInSeq(char c) {
+char SplitFlapCell::nextInSeqDigit(char c) {
   if (c == ' ')               return '0';
   if (c >= '0' && c <= '8')  return c + 1;
   return '0';   // '9' wraps back to '0'
+}
+
+char SplitFlapCell::nextInSeqFull(char c) {
+  if (c == ' ')              return 'A';
+  if (c >= 'A' && c < 'Z')  return c + 1;
+  if (c == 'Z')              return '0';
+  if (c >= '0' && c < '9')  return c + 1;
+  return ' ';   // '9' wraps to blank
 }
 
 uint16_t SplitFlapCell::dim(uint16_t rgb, uint8_t bright) {
@@ -106,84 +118,73 @@ uint16_t SplitFlapCell::pack565(uint8_t r, uint8_t g, uint8_t b) {
 // ── Rendering ─────────────────────────────────────────────────────────────────
 
 void SplitFlapCell::blitHalf(const SplitflapBitmap& bmp, int dstY) {
-  for (int y = 0; y < TILE_HALF; y++) {
-    const uint16_t* row = bmp.pixels + (size_t)y * TILE_W;
-    for (int x = 0; x < TILE_W; x++) {
-      _sprite->drawPixel(x, dstY + y, pgm_read_word(row + x));
+  // bmp source is always TILE_W × TILE_HALF; scale to _tileW × _tileHalf.
+  for (int oy = 0; oy < _tileHalf; oy++) {
+    int sy = oy * TILE_HALF / _tileHalf;
+    const uint16_t* row = bmp.pixels + (size_t)sy * TILE_W;
+    for (int ox = 0; ox < _tileW; ox++) {
+      int sx = ox * TILE_W / _tileW;
+      _sprite->drawPixel(ox, dstY + oy, pgm_read_word(row + sx));
     }
   }
 }
 
 void SplitFlapCell::blitScaledDark(const SplitflapBitmap& bmp, int dstH) {
-  // Draw dstH rows starting at y=TILE_HALF in the sprite.
-  // Each row maps to a source row in bmp (48×36), vertically compressed.
-  // Brightness goes from very dark at the hinge (y=TILE_HALF, dy=0)
-  // to near-full at the free edge (dy=dstH-1).
   if (dstH <= 0) return;
-  const int srcH  = TILE_HALF;
   const int steps = max(dstH - 1, 1);
   for (int dy = 0; dy < dstH; dy++) {
-    int sy     = dy * (srcH - 1) / steps;
-    // bright 50 → 230 as the flap settles (hinge dark, free edge bright)
+    int sy = dy * (TILE_HALF - 1) / steps;
     uint8_t bright = (uint8_t)(50 + 180 * dy / steps);
     const uint16_t* row = bmp.pixels + (size_t)sy * TILE_W;
-    for (int dx = 0; dx < TILE_W; dx++) {
-      _sprite->drawPixel(dx, TILE_HALF + dy, dim(pgm_read_word(row + dx), bright));
+    for (int dx = 0; dx < _tileW; dx++) {
+      int sx = dx * TILE_W / _tileW;
+      _sprite->drawPixel(dx, _tileHalf + dy, dim(pgm_read_word(row + sx), bright));
     }
   }
 }
 
 void SplitFlapCell::renderIdle() {
   const SplitflapBitmap& full = splitflapBitmap(_currentChar, SplitflapPart::Full);
-  for (int y = 0; y < TILE_H; y++) {
-    const uint16_t* row = full.pixels + (size_t)y * TILE_W;
-    for (int x = 0; x < TILE_W; x++) {
-      _sprite->drawPixel(x, y, pgm_read_word(row + x));
+  for (int oy = 0; oy < _tileH; oy++) {
+    int sy = oy * TILE_H / _tileH;
+    const uint16_t* row = full.pixels + (size_t)sy * TILE_W;
+    for (int ox = 0; ox < _tileW; ox++) {
+      int sx = ox * TILE_W / _tileW;
+      _sprite->drawPixel(ox, oy, pgm_read_word(row + sx));
     }
   }
-  // Reinforce the centre shadow line — the physical gap between flaps.
-  _sprite->drawFastHLine(0, TILE_HALF - 1, TILE_W, SHADOW);
-  _sprite->drawFastHLine(0, TILE_HALF,     TILE_W, SHADOW);
+  _sprite->drawFastHLine(0, _tileHalf - 1, _tileW, SHADOW);
+  _sprite->drawFastHLine(0, _tileHalf,     _tileW, SHADOW);
   _sprite->pushSprite(_x, _y);
 }
 
 void SplitFlapCell::renderPhase1() {
-  // Background: new-char top half revealed, old-char bottom half static.
-  char newChar = nextInSeq(_currentChar);
+  char newChar = _fullSeq ? nextInSeqFull(_currentChar) : nextInSeqDigit(_currentChar);
   blitHalf(splitflapBitmap(newChar,       SplitflapPart::Top),    0);
-  blitHalf(splitflapBitmap(_currentChar,  SplitflapPart::Bottom), TILE_HALF);
+  blitHalf(splitflapBitmap(_currentChar,  SplitflapPart::Bottom), _tileHalf);
 
-  // Old top flap falling: a dark gradient rectangle shrinks from TILE_HALF→0.
-  // step 0 → flapH=TILE_HALF (covers new top completely)
-  // step FLAP_STEPS-1 → flapH=TILE_HALF/FLAP_STEPS (thin sliver)
-  int flapH = TILE_HALF - TILE_HALF * _animStep / FLAP_STEPS;
+  int flapH = _tileHalf - _tileHalf * _animStep / FLAP_STEPS;
   for (int dy = 0; dy < flapH; dy++) {
-    // Free edge (top, dy=0) catches a little ambient light — slightly lighter.
-    // Hinge (bottom, dy=flapH-1) is deepest shadow.
-    // Values stay well below tile background (0x0841 = 8,8,8) so the
-    // back face always looks visually darker than the revealed new character.
     int denom = max(flapH - 1, 1);
-    uint8_t rv = (uint8_t)(6 + 6 * (flapH - 1 - dy) / denom); // 6..12
+    uint8_t rv = (uint8_t)(6 + 6 * (flapH - 1 - dy) / denom);
     uint16_t c = pack565(rv, rv, rv);
-    _sprite->drawFastHLine(0, TILE_HALF - flapH + dy, TILE_W, c);
+    _sprite->drawFastHLine(0, _tileHalf - flapH + dy, _tileW, c);
   }
 
-  _sprite->drawFastHLine(0, TILE_HALF - 1, TILE_W, SHADOW);
-  _sprite->drawFastHLine(0, TILE_HALF,     TILE_W, SHADOW);
+  _sprite->drawFastHLine(0, _tileHalf - 1, _tileW, SHADOW);
+  _sprite->drawFastHLine(0, _tileHalf,     _tileW, SHADOW);
   _sprite->pushSprite(_x, _y);
 }
 
 void SplitFlapCell::renderPhase2() {
-  // Background: new-char top static, old-char bottom (visible until covered).
-  char newChar = nextInSeq(_currentChar);
+  char newChar = _fullSeq ? nextInSeqFull(_currentChar) : nextInSeqDigit(_currentChar);
   blitHalf(splitflapBitmap(newChar,       SplitflapPart::Top),    0);
-  blitHalf(splitflapBitmap(_currentChar,  SplitflapPart::Bottom), TILE_HALF);
+  blitHalf(splitflapBitmap(_currentChar,  SplitflapPart::Bottom), _tileHalf);
 
-  // New bottom flap falling in: character pixels appear, growing 0→TILE_HALF.
-  int flapH = TILE_HALF * _animStep / FLAP_STEPS;
+  int flapH = _tileHalf * _animStep / FLAP_STEPS;
   blitScaledDark(splitflapBitmap(newChar, SplitflapPart::Bottom), flapH);
 
-  _sprite->drawFastHLine(0, TILE_HALF - 1, TILE_W, SHADOW);
-  _sprite->drawFastHLine(0, TILE_HALF,     TILE_W, SHADOW);
+  _sprite->drawFastHLine(0, _tileHalf - 1, _tileW, SHADOW);
+  _sprite->drawFastHLine(0, _tileHalf,     _tileW, SHADOW);
   _sprite->pushSprite(_x, _y);
 }

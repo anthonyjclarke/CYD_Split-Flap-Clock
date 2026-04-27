@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.1.4] 2026-04-27
+
+### Changed
+- Demo day-of-week and date rows now use split-flap tile cells (not TFT text):
+  9 half-size (24×36) tiles above for the day name, 11 below for DD MMM YYYY
+- `SplitFlapCell` is now parameterisable: `begin()` accepts `tileW`, `tileH`,
+  and `fullSeq`; all render functions nearest-neighbour-scale the 48×72 source
+  bitmaps to any tile size at zero memory cost (no extra assets)
+- Full Solari flip sequence added: `' '→A→…→Z→0→…→9→' '` used by text cells;
+  digit cells keep the existing `' '→0→1→…→9→0` cycle
+- Regenerated `splitflap_bitmaps` with full A–Z set (~510 KB flash) required
+  for letter tiles
+
 ## [0.1.3] 2026-04-27
 
 ### Added

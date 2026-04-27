@@ -37,6 +37,22 @@ constexpr int CELL_X_M1  = 248;  // 192 + 48 + 8
 // Screen background — matches the tile background colour (0x0841 ≈ RGB 8,8,8)
 constexpr uint16_t SCREEN_BG = 0x0841;
 
+// ── Text tile layout (demo mode — half-size tiles for day/date rows) ──────────
+// Source bitmaps are always 48×72; these tiles are nearest-neighbour scaled.
+constexpr int TEXT_TILE_W   = TILE_W / 2;   // 24 px
+constexpr int TEXT_TILE_H   = TILE_H / 2;   // 36 px
+constexpr int TEXT_TILE_GAP = 4;            // gap between text tiles
+
+// Day-of-week row: always 9 cells — shorter names are centre-padded with spaces.
+constexpr int DOW_CELLS = 9;
+constexpr int DOW_X0    = (320 - (DOW_CELLS  * TEXT_TILE_W + (DOW_CELLS  - 1) * TEXT_TILE_GAP)) / 2;
+constexpr int DOW_Y     = (CELL_Y - TEXT_TILE_H) / 2;
+
+// Date row: 11 cells — always "DD MMM YYYY" (exactly 11 chars).
+constexpr int DATE_CELLS = 11;
+constexpr int DATE_X0    = (320 - (DATE_CELLS * TEXT_TILE_W + (DATE_CELLS - 1) * TEXT_TILE_GAP)) / 2;
+constexpr int DATE_Y     = CELL_Y + TILE_H + (240 - CELL_Y - TILE_H - TEXT_TILE_H) / 2;
+
 // ── Animation timing ─────────────────────────────────────────────────────────
 // Each flip has two phases (old-top falls, new-bottom rises), FLAP_STEPS each.
 // Total time per character step = 2 × FLAP_STEPS × FLAP_STEP_MS ms.

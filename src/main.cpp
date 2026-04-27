@@ -87,27 +87,36 @@ static const char* const DEMO_DAYS[] = {
 static const char* const DEMO_MONTHS[] = {
   "JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"
 };
-static char demoDOW[12];   // "WEDNESDAY\0" = 10 chars max
-static char demoDate[13];  // "28 SEP 2026\0" = 12 chars
+
+// DOW_CELLS chars + null, date is always exactly DATE_CELLS chars.
+static char demoDOW[DOW_CELLS + 1];
+static char demoDate[DATE_CELLS + 1];
+
+static SplitFlapCell dowCells[DOW_CELLS];
+static SplitFlapCell dateCells[DATE_CELLS];
 
 static void pickDemoValues() {
-  strncpy(demoDOW, DEMO_DAYS[random(7)], sizeof(demoDOW) - 1);
-  demoDOW[sizeof(demoDOW) - 1] = '\0';
+  // Centre-pad day name to DOW_CELLS characters.
+  const char* day = DEMO_DAYS[random(7)];
+  int len = strlen(day);
+  int left = (DOW_CELLS - len) / 2;
+  memset(demoDOW, ' ', DOW_CELLS);
+  memcpy(demoDOW + left, day, len);
+  demoDOW[DOW_CELLS] = '\0';
+
+  // "DD MMM YYYY" — always exactly DATE_CELLS chars.
   snprintf(demoDate, sizeof(demoDate), "%02d %s %04d",
            (int)random(1, 29), DEMO_MONTHS[random(12)], 2025 + (int)random(3));
 }
 
-static void clearDemoLabels() {
-  tft.fillRect(0, 0,             320, CELL_Y,                    SCREEN_BG);
-  tft.fillRect(0, CELL_Y + TILE_H, 320, 240 - CELL_Y - TILE_H, SCREEN_BG);
+static void setDOWCells(bool animate = true) {
+  for (int i = 0; i < DOW_CELLS; i++)
+    dowCells[i].setChar(demoDOW[i], animate);
 }
 
-static void drawDemoLabels() {
-  tft.setFreeFont(&FreeSansBold18pt7b);
-  tft.setTextColor(TFT_WHITE, SCREEN_BG);
-  tft.setTextDatum(MC_DATUM);
-  tft.drawString(demoDOW,  160, CELL_Y / 2);
-  tft.drawString(demoDate, 160, CELL_Y + TILE_H + (240 - CELL_Y - TILE_H) / 2);
+static void setDateCells(bool animate = true) {
+  for (int i = 0; i < DATE_CELLS; i++)
+    dateCells[i].setChar(demoDate[i], animate);
 }
 
 static void setDemoDigits() {
@@ -117,9 +126,20 @@ static void setDemoDigits() {
   cells[3].setChar('0' + random(10));
 }
 
+static void initTextCells() {
+  for (int i = 0; i < DOW_CELLS; i++)
+    dowCells[i].begin(&tft, DOW_X0 + i * (TEXT_TILE_W + TEXT_TILE_GAP), DOW_Y,
+                      TEXT_TILE_W, TEXT_TILE_H, true);
+  for (int i = 0; i < DATE_CELLS; i++)
+    dateCells[i].begin(&tft, DATE_X0 + i * (TEXT_TILE_W + TEXT_TILE_GAP), DATE_Y,
+                       TEXT_TILE_W, TEXT_TILE_H, true);
+}
+
 static void initDemo() {
+  initTextCells();
   pickDemoValues();
-  drawDemoLabels();
+  setDOWCells(false);    // instant on first boot — no animation from blank
+  setDateCells(false);
   setDemoDigits();
 }
 
@@ -131,10 +151,12 @@ static void updateDemo() {
   if (now - lastMinute >= DEMO_RESET_MS) {
     lastMinute = now;
     lastChange = now;
-    for (int i = 0; i < 4; i++) cells[i].setChar(' ', false);
-    clearDemoLabels();
+    for (int i = 0; i < 4;          i++) cells[i].setChar(' ', false);
+    for (int i = 0; i < DOW_CELLS;  i++) dowCells[i].setChar(' ', false);
+    for (int i = 0; i < DATE_CELLS; i++) dateCells[i].setChar(' ', false);
     pickDemoValues();
-    drawDemoLabels();
+    setDOWCells();
+    setDateCells();
     setDemoDigits();
     return;
   }
@@ -189,12 +211,12 @@ void loop() {
 
 #ifdef DEMO_MODE
   updateDemo();
+  for (int i = 0; i < DOW_CELLS;  i++) dowCells[i].tick(now);
+  for (int i = 0; i < DATE_CELLS; i++) dateCells[i].tick(now);
 #else
   events();       // ezTime background sync
   updateClock();
 #endif
 
-  for (int i = 0; i < 4; i++) {
-    cells[i].tick(now);
-  }
+  for (int i = 0; i < 4; i++) cells[i].tick(now);
 }
