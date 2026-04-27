@@ -8,6 +8,7 @@
 - Add optional date formats, such as `DD MMM YYYY`, `MMM DD YYYY`, or ISO style.
 - Add a brief DST/timezone diagnostic line to serial output after NTP sync.
 - Colour options for Display (day, time, am/pm and date), configurable in config.h
+- Add Version numbering
 
 ## Unreleased
 
