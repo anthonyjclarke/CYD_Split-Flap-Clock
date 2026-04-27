@@ -1,0 +1,19 @@
+{
+  "purpose": "Split-flap / airport-board style CYD TFT assets",
+  "display_target": "ESP32 Cheap Yellow Display, 320x240 TFT_eSPI",
+  "tile_size_px": [
+    48,
+    72
+  ],
+  "half_tile_size_px": [
+    48,
+    36
+  ],
+  "glyph_mask_size_px": [
+    32,
+    48
+  ],
+  "characters": "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789: plus blank",
+  "font_used_for_rasterisation": "PT Sans Narrow Bold",
+  "note": "Font file is not included. PNGs are pre-rasterised tile artwork for prototyping."
+}
