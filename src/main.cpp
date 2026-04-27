@@ -15,208 +15,259 @@
 TFT_eSPI tft;
 Timezone myTZ;
 
-// Four digit cells: H-tens, H-units, M-tens, M-units.
-SplitFlapCell cells[4];
+// Time digit cells: H-tens, H-units, M-tens, M-units, S-tens, S-units.
+SplitFlapCell cells[TIME_DIGITS];
+SplitFlapCell dowCells[DOW_CELLS];
+SplitFlapCell ampmCells[AMPM_CELLS];
+SplitFlapCell dateCells[DATE_CELLS];
+
+static const uint8_t TIME_DIGIT_SLOTS[TIME_DIGITS] = {0, 1, 3, 4, 6, 7};
+
+static const char* const DAY_NAMES[] = {
+  "", "SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"
+};
+
+static const char* const MONTH_NAMES[] = {
+  "", "JAN", "FEB", "MAR", "APR", "MAY", "JUN",
+  "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"
+};
 
 // ── Init functions ─────────────────────────────────────────────────────────────
 
 static void initDisplay() {
+  DBG_INFO("Boot: initialising TFT display...");
   tft.init();
+  DBG_INFO("Boot: setting TFT rotation...");
   tft.setRotation(1);           // landscape, USB connector on right
+  DBG_INFO("Boot: clearing screen...");
   tft.fillScreen(SCREEN_BG);
 
+  DBG_INFO("Boot: enabling backlight...");
   ledcAttach(TFT_BL, BACKLIGHT_FREQ, BACKLIGHT_RES_BITS);
   ledcWrite(TFT_BL, BACKLIGHT_DUTY);
 
-  DBG_INFO("Display init OK");
+  DBG_INFO("Boot: TFT display ready");
 }
 
-static void drawStaticColon() {
-  // The colon tile never animates — push once during setup.
-  const SplitflapBitmap& col = splitflapBitmap(':', SplitflapPart::Full);
+static int timeCharX(int slot) {
+  return TIME_X0 + slot * (TIME_TILE_W + TIME_TILE_GAP);
+}
+
+static void drawStaticTimeChar(char c, int slot) {
+  // Static separator tiles never animate, so push them once during setup.
+  const SplitflapBitmap& bmp = splitflapBitmap(c, SplitflapPart::Full);
   tft.startWrite();
-  for (int y = 0; y < TILE_H; y++) {
-    const uint16_t* row = col.pixels + (size_t)y * TILE_W;
-    for (int x = 0; x < TILE_W; x++) {
-      tft.drawPixel(CELL_X_COL + x, CELL_Y + y, pgm_read_word(row + x));
+  for (int y = 0; y < TIME_TILE_H; y++) {
+    int sy = y * TILE_H / TIME_TILE_H;
+    const uint16_t* row = bmp.pixels + (size_t)sy * TILE_W;
+    for (int x = 0; x < TIME_TILE_W; x++) {
+      int sx = x * TILE_W / TIME_TILE_W;
+      tft.drawPixel(timeCharX(slot) + x, CELL_Y + y, pgm_read_word(row + sx));
     }
   }
   tft.endWrite();
 }
 
 static void initCells() {
-  cells[0].begin(&tft, CELL_X_H0, CELL_Y);
-  cells[1].begin(&tft, CELL_X_H1, CELL_Y);
-  cells[2].begin(&tft, CELL_X_M0, CELL_Y);
-  cells[3].begin(&tft, CELL_X_M1, CELL_Y);
-  drawStaticColon();
-  DBG_INFO("Cells init OK");
+  DBG_INFO("Boot: initialising time cells...");
+  for (int i = 0; i < TIME_DIGITS; i++) {
+    cells[i].begin(&tft, timeCharX(TIME_DIGIT_SLOTS[i]), CELL_Y,
+                   TIME_TILE_W, TIME_TILE_H);
+  }
+  DBG_INFO("Boot: drawing static time separators...");
+  drawStaticTimeChar(':', 2);
+  drawStaticTimeChar(':', 5);
+  DBG_INFO("Boot: time cells ready");
+}
+
+static void initTextCells() {
+  DBG_INFO("Boot: initialising day/date/AMPM cells...");
+  for (int i = 0; i < DOW_CELLS; i++)
+    dowCells[i].begin(&tft, DOW_X0 + i * (DOW_TILE_W + DOW_TILE_GAP), DOW_Y,
+                      DOW_TILE_W, DOW_TILE_H, true);
+  for (int i = 0; i < AMPM_CELLS; i++)
+    ampmCells[i].begin(&tft, AMPM_X0 + i * (TEXT_TILE_W + TEXT_TILE_GAP), AMPM_Y,
+                       TEXT_TILE_W, TEXT_TILE_H, true);
+  for (int i = 0; i < DATE_CELLS; i++)
+    dateCells[i].begin(&tft, DATE_X0 + i * (TEXT_TILE_W + TEXT_TILE_GAP), DATE_Y,
+                       TEXT_TILE_W, TEXT_TILE_H, true);
+  DBG_INFO("Boot: day/date/AMPM cells ready");
 }
 
 static void initWiFi() {
   WiFiManager wm;
   wm.setConfigPortalTimeout(180);  // 3-minute portal timeout
 
-  DBG_INFO("Starting WiFiManager...");
+  DBG_INFO("Boot: connecting to WiFi...");
+  DBG_INFO("WiFi: AP fallback SSID '%s', portal timeout 180s", WIFI_AP_NAME);
   if (!wm.autoConnect(WIFI_AP_NAME)) {
     DBG_ERROR("WiFi connect failed — restarting");
     delay(1000);
     ESP.restart();
   }
-  DBG_INFO("WiFi OK — IP %s", WiFi.localIP().toString().c_str());
+  DBG_INFO("WiFi: connected, IP %s", WiFi.localIP().toString().c_str());
 }
 
 static void initTime() {
-  DBG_INFO("Syncing NTP...");
+  DBG_INFO("Boot: configuring timezone %s", TIMEZONE);
   myTZ.setLocation(F(TIMEZONE));
+  DBG_INFO("Boot: time display mode %s", USE_24_HOUR_TIME ? "24-hour" : "12-hour");
+  DBG_INFO("Boot: syncing NTP...");
   waitForSync(30);   // 30 s timeout; carries on regardless
   if (timeStatus() == timeSet) {
-    DBG_INFO("Time: %s", myTZ.dateTime().c_str());
+    DBG_INFO("NTP: time set, %s", myTZ.dateTime().c_str());
   } else {
     DBG_WARN("NTP sync timed out — will retry in background");
   }
 }
 
-// ── Demo update ───────────────────────────────────────────────────────────────
+// ── Day/date helpers ──────────────────────────────────────────────────────────
 
-#ifdef DEMO_MODE
-
-static const char* const DEMO_DAYS[] = {
-  "MONDAY","TUESDAY","WEDNESDAY","THURSDAY","FRIDAY","SATURDAY","SUNDAY"
-};
-static const char* const DEMO_MONTHS[] = {
-  "JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"
-};
-
-// DOW_CELLS chars + null, date is always exactly DATE_CELLS chars.
-static char demoDOW[DOW_CELLS + 1];
-static char demoDate[DATE_CELLS + 1];
-
-static SplitFlapCell dowCells[DOW_CELLS];
-static SplitFlapCell dateCells[DATE_CELLS];
-
-static void pickDemoValues() {
-  // Centre-pad day name to DOW_CELLS characters.
-  const char* day = DEMO_DAYS[random(7)];
-  int len = strlen(day);
-  int left = (DOW_CELLS - len) / 2;
-  memset(demoDOW, ' ', DOW_CELLS);
-  memcpy(demoDOW + left, day, len);
-  demoDOW[DOW_CELLS] = '\0';
-
-  // "DD MMM YYYY" — always exactly DATE_CELLS chars.
-  snprintf(demoDate, sizeof(demoDate), "%02d %s %04d",
-           (int)random(1, 29), DEMO_MONTHS[random(12)], 2025 + (int)random(3));
+static void centerText(char* out, int width, const char* text) {
+  int len = strlen(text);
+  if (len > width) len = width;
+  int left = (width - len + 1) / 2;
+  memset(out, ' ', width);
+  memcpy(out + left, text, len);
+  out[width] = '\0';
 }
 
-static void setDOWCells(bool animate = true) {
+static void setTextCells(SplitFlapCell* targetCells, int count, const char* text,
+                         bool animate) {
+  for (int i = 0; i < count; i++)
+    targetCells[i].setChar(text[i], animate);
+}
+
+static void tickAllCells(uint32_t now) {
+  for (int i = 0; i < TIME_DIGITS; i++) cells[i].tick(now);
+  for (int i = 0; i < DOW_CELLS;  i++) dowCells[i].tick(now);
+  for (int i = 0; i < AMPM_CELLS; i++) ampmCells[i].tick(now);
+  for (int i = 0; i < DATE_CELLS; i++) dateCells[i].tick(now);
+}
+
+static bool anyCellAnimating() {
+  for (int i = 0; i < TIME_DIGITS; i++)
+    if (cells[i].isAnimating()) return true;
   for (int i = 0; i < DOW_CELLS; i++)
-    dowCells[i].setChar(demoDOW[i], animate);
-}
-
-static void setDateCells(bool animate = true) {
+    if (dowCells[i].isAnimating()) return true;
+  for (int i = 0; i < AMPM_CELLS; i++)
+    if (ampmCells[i].isAnimating()) return true;
   for (int i = 0; i < DATE_CELLS; i++)
-    dateCells[i].setChar(demoDate[i], animate);
+    if (dateCells[i].isAnimating()) return true;
+  return false;
 }
 
-static void setDemoDigits() {
-  cells[0].setChar('0' + random(10));
-  cells[1].setChar('0' + random(10));
-  cells[2].setChar('0' + random(6));   // tens of minutes: 0–5
-  cells[3].setChar('0' + random(10));
-}
-
-static void initTextCells() {
-  for (int i = 0; i < DOW_CELLS; i++)
-    dowCells[i].begin(&tft, DOW_X0 + i * (TEXT_TILE_W + TEXT_TILE_GAP), DOW_Y,
-                      TEXT_TILE_W, TEXT_TILE_H, true);
-  for (int i = 0; i < DATE_CELLS; i++)
-    dateCells[i].begin(&tft, DATE_X0 + i * (TEXT_TILE_W + TEXT_TILE_GAP), DATE_Y,
-                       TEXT_TILE_W, TEXT_TILE_H, true);
-}
-
-static void initDemo() {
-  initTextCells();
-  pickDemoValues();
-  setDOWCells(false);    // instant on first boot — no animation from blank
-  setDateCells(false);
-  setDemoDigits();
-}
-
-static void updateDemo() {
-  static uint32_t lastChange = 0;
-  static uint32_t lastMinute = 0;
-  uint32_t now = millis();
-
-  if (now - lastMinute >= DEMO_RESET_MS) {
-    lastMinute = now;
-    lastChange = now;
-    for (int i = 0; i < 4;          i++) cells[i].setChar(' ', false);
-    for (int i = 0; i < DOW_CELLS;  i++) dowCells[i].setChar(' ', false);
-    for (int i = 0; i < DATE_CELLS; i++) dateCells[i].setChar(' ', false);
-    pickDemoValues();
-    setDOWCells();
-    setDateCells();
-    setDemoDigits();
-    return;
-  }
-
-  if (now - lastChange >= DEMO_CHANGE_MS) {
-    lastChange = now;
-    setDemoDigits();
+static void waitForCellAnimations() {
+  while (anyCellAnimating()) {
+    tickAllCells(millis());
+    delay(1);
   }
 }
 
-#endif
+static void blankTextCells() {
+  for (int i = 0; i < DOW_CELLS; i++) dowCells[i].setChar(' ', false);
+  for (int i = 0; i < AMPM_CELLS; i++) ampmCells[i].setChar(' ', false);
+  for (int i = 0; i < DATE_CELLS; i++) dateCells[i].setChar(' ', false);
+}
+
+static void blankAllAnimatedCells() {
+  for (int i = 0; i < TIME_DIGITS; i++) cells[i].setChar(' ', false);
+  blankTextCells();
+}
+
+static void runStartupSelfTest() {
+  if (!RUN_STARTUP_SELF_TEST) return;
+
+  DBG_INFO("Boot: running split-flap startup self-test...");
+
+  for (int i = 0; i < TIME_DIGITS; i++) cells[i].setChar('8');
+  setTextCells(dowCells, DOW_CELLS, "WEDNESDAY", true);
+  setTextCells(ampmCells, AMPM_CELLS, "PM", true);
+  setTextCells(dateCells, DATE_CELLS, "88 XXX 8888", true);
+  waitForCellAnimations();
+
+  DBG_INFO("Boot: clearing startup self-test pattern...");
+  blankAllAnimatedCells();
+
+  DBG_INFO("Boot: startup self-test complete");
+}
+
+static void updateDateRows(bool animate) {
+  char dowText[DOW_CELLS + 1];
+  char ampmText[AMPM_CELLS + 1];
+  char dateText[DATE_CELLS + 1];
+
+  uint8_t weekday = myTZ.weekday();
+  uint8_t month = myTZ.month();
+  const char* dayName = (weekday >= 1 && weekday <= 7) ? DAY_NAMES[weekday] : "";
+  const char* monthName = (month >= 1 && month <= 12) ? MONTH_NAMES[month] : "";
+
+  centerText(dowText, DOW_CELLS, dayName);
+  centerText(ampmText, AMPM_CELLS,
+             USE_24_HOUR_TIME ? "" : (myTZ.isAM() ? "AM" : "PM"));
+  snprintf(dateText, sizeof(dateText), "%02u %s %04u",
+           (unsigned)myTZ.day(), monthName, (unsigned)myTZ.year());
+
+  if (animate) blankTextCells();
+  setTextCells(dowCells, DOW_CELLS, dowText, animate);
+  setTextCells(ampmCells, AMPM_CELLS, ampmText, animate);
+  setTextCells(dateCells, DATE_CELLS, dateText, animate);
+}
 
 // ── Clock update ──────────────────────────────────────────────────────────────
 
 static void updateClock() {
   if (timeStatus() != timeSet) return;
 
-  static uint32_t lastSec = 0;
-  uint32_t nowSec = (uint32_t)myTZ.now();
+  static time_t lastSec = 0;
+  static int lastMinute = -1;
+  static bool dateRowsInitialized = false;
+  time_t nowSec = myTZ.now();
   if (nowSec == lastSec) return;
   lastSec = nowSec;
 
-  int h = myTZ.hour();
+  int h = USE_24_HOUR_TIME ? myTZ.hour() : myTZ.hourFormat12();
   int m = myTZ.minute();
+  int s = myTZ.second();
 
-  DBG_VERBOSE("Time %02d:%02d", h, m);
+  DBG_VERBOSE("Time %02d:%02d:%02d", h, m, s);
+
+  if (!dateRowsInitialized) {
+    updateDateRows(true);
+    dateRowsInitialized = true;
+  } else if (m != lastMinute) {
+    updateDateRows(true);
+  }
+  lastMinute = m;
 
   cells[0].setChar('0' + h / 10);
   cells[1].setChar('0' + h % 10);
   cells[2].setChar('0' + m / 10);
   cells[3].setChar('0' + m % 10);
+  cells[4].setChar('0' + s / 10);
+  cells[5].setChar('0' + s % 10);
 }
 
 // ── Arduino entry points ──────────────────────────────────────────────────────
 
 void setup() {
   Serial.begin(115200);
+  delay(50);
+  DBG_INFO("Boot: Split-flap clock starting");
   initDisplay();
   initCells();
-#ifdef DEMO_MODE
-  randomSeed(esp_random());
-  initDemo();
-#else
+  initTextCells();
+  runStartupSelfTest();
+  DBG_INFO("Boot: live clock mode enabled");
   initWiFi();
   initTime();
-#endif
-  DBG_INFO("Free heap: %d bytes", ESP.getFreeHeap());
+  DBG_INFO("Boot: startup complete, free heap %d bytes", ESP.getFreeHeap());
 }
 
 void loop() {
   uint32_t now = millis();
 
-#ifdef DEMO_MODE
-  updateDemo();
-  for (int i = 0; i < DOW_CELLS;  i++) dowCells[i].tick(now);
-  for (int i = 0; i < DATE_CELLS; i++) dateCells[i].tick(now);
-#else
   events();       // ezTime background sync
   updateClock();
-#endif
-
-  for (int i = 0; i < 4; i++) cells[i].tick(now);
+  tickAllCells(now);
 }

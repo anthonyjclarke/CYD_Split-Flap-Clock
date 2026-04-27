@@ -1,5 +1,20 @@
 # Changelog
 
+## Todo
+
+- Add a simple on-device WiFi/time status screen for failed WiFi or NTP sync.
+- Add config options for brightness presets or auto-dimming by time of day.
+- Add a button or touch gesture to toggle 12/24-hour display without reflashing.
+- Add optional date formats, such as `DD MMM YYYY`, `MMM DD YYYY`, or ISO style.
+- Add a brief DST/timezone diagnostic line to serial output after NTP sync.
+- Colour options for Display (day, time, am/pm and date), configurable in config.h
+
+## Unreleased
+
+### Added
+- Startup self-test flips all animated time, day, AM/PM, and date cells to a
+  diagnostic pattern, clears them, then lets the live clock roll in after NTP.
+
 ## [0.1.4] 2026-04-27
 
 ### Changed
