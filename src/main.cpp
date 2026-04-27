@@ -10,10 +10,6 @@
 #include "splitflap_bitmaps.h"
 #include "SplitFlapCell.h"
 
-#ifdef DEMO_MODE
-#include <Fonts/GFXFF/FreeSansBold18pt7b.h>
-#endif
-
 // ── Globals ───────────────────────────────────────────────────────────────────
 
 TFT_eSPI tft;
