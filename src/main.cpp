@@ -10,6 +10,10 @@
 #include "splitflap_bitmaps.h"
 #include "SplitFlapCell.h"
 
+#ifdef DEMO_MODE
+#include <Fonts/GFXFF/FreeSansBold18pt7b.h>
+#endif
+
 // ── Globals ───────────────────────────────────────────────────────────────────
 
 TFT_eSPI tft;
@@ -80,15 +84,71 @@ static void initTime() {
 // ── Demo update ───────────────────────────────────────────────────────────────
 
 #ifdef DEMO_MODE
+
+static const char* const DEMO_DAYS[] = {
+  "MONDAY","TUESDAY","WEDNESDAY","THURSDAY","FRIDAY","SATURDAY","SUNDAY"
+};
+static const char* const DEMO_MONTHS[] = {
+  "JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"
+};
+static char demoDOW[12];   // "WEDNESDAY\0" = 10 chars max
+static char demoDate[13];  // "28 SEP 2026\0" = 12 chars
+
+static void pickDemoValues() {
+  strncpy(demoDOW, DEMO_DAYS[random(7)], sizeof(demoDOW) - 1);
+  demoDOW[sizeof(demoDOW) - 1] = '\0';
+  snprintf(demoDate, sizeof(demoDate), "%02d %s %04d",
+           (int)random(1, 29), DEMO_MONTHS[random(12)], 2025 + (int)random(3));
+}
+
+static void clearDemoLabels() {
+  tft.fillRect(0, 0,             320, CELL_Y,                    SCREEN_BG);
+  tft.fillRect(0, CELL_Y + TILE_H, 320, 240 - CELL_Y - TILE_H, SCREEN_BG);
+}
+
+static void drawDemoLabels() {
+  tft.setFreeFont(&FreeSansBold18pt7b);
+  tft.setTextColor(TFT_WHITE, SCREEN_BG);
+  tft.setTextDatum(MC_DATUM);
+  tft.drawString(demoDOW,  160, CELL_Y / 2);
+  tft.drawString(demoDate, 160, CELL_Y + TILE_H + (240 - CELL_Y - TILE_H) / 2);
+}
+
+static void setDemoDigits() {
+  cells[0].setChar('0' + random(10));
+  cells[1].setChar('0' + random(10));
+  cells[2].setChar('0' + random(6));   // tens of minutes: 0–5
+  cells[3].setChar('0' + random(10));
+}
+
+static void initDemo() {
+  pickDemoValues();
+  drawDemoLabels();
+  setDemoDigits();
+}
+
 static void updateDemo() {
   static uint32_t lastChange = 0;
+  static uint32_t lastMinute = 0;
   uint32_t now = millis();
-  if (now - lastChange < DEMO_CHANGE_MS) return;
-  lastChange = now;
-  for (int i = 0; i < 4; i++) {
-    cells[i].setChar('0' + random(10));
+
+  if (now - lastMinute >= DEMO_RESET_MS) {
+    lastMinute = now;
+    lastChange = now;
+    for (int i = 0; i < 4; i++) cells[i].setChar(' ', false);
+    clearDemoLabels();
+    pickDemoValues();
+    drawDemoLabels();
+    setDemoDigits();
+    return;
+  }
+
+  if (now - lastChange >= DEMO_CHANGE_MS) {
+    lastChange = now;
+    setDemoDigits();
   }
 }
+
 #endif
 
 // ── Clock update ──────────────────────────────────────────────────────────────
@@ -120,7 +180,7 @@ void setup() {
   initCells();
 #ifdef DEMO_MODE
   randomSeed(esp_random());
-  updateDemo();   // populate cells immediately rather than waiting first interval
+  initDemo();
 #else
   initWiFi();
   initTime();

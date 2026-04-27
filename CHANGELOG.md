@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.1.3] 2026-04-27
+
+### Added
+- Demo mode now shows day-of-week label above and DD MMM YYYY date below the
+  digit tiles, rendered in FreeSansBold18pt7b centred on the 84 px strips above
+  and below the tile row
+- Full reset cycle every `DEMO_RESET_MS` (60 s): instant-blanks all four digit
+  tiles, wipes text areas, picks new random day/date, draws labels, then
+  animates digits back in from blank
+- `DEMO_RESET_MS = 60000` added to `config.h`
+- Separated `initDemo()` (called once in `setup()`) from `updateDemo()` so the
+  initial fill is guaranteed to run before the first 2.5 s interval elapses
+
 ## [0.1.2] 2026-04-27
 
 ### Added

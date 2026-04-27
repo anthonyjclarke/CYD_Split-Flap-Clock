@@ -4,7 +4,8 @@
 // When defined: skips WiFi/NTP and randomly flips digits to show the animation.
 // Comment out to run as a real clock.
 #define DEMO_MODE
-constexpr uint32_t DEMO_CHANGE_MS = 2500;  // ms between random digit changes
+constexpr uint32_t DEMO_CHANGE_MS = 2500;   // ms between random digit changes
+constexpr uint32_t DEMO_RESET_MS  = 60000;  // ms between full clear + rebuild
 
 // ── WiFi ─────────────────────────────────────────────────────────────────────
 #define WIFI_AP_NAME "SplitFlapClock"
