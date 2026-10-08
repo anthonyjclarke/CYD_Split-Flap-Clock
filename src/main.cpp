@@ -43,8 +43,9 @@ static void initDisplay() {
   tft.fillScreen(SCREEN_BG);
 
   DBG_INFO("Boot: enabling backlight...");
-  ledcAttach(TFT_BL, BACKLIGHT_FREQ, BACKLIGHT_RES_BITS);
-  ledcWrite(TFT_BL, BACKLIGHT_DUTY);
+  ledcSetup(BACKLIGHT_CHANNEL, BACKLIGHT_FREQ, BACKLIGHT_RES_BITS);
+  ledcAttachPin(TFT_BL, BACKLIGHT_CHANNEL);
+  ledcWrite(BACKLIGHT_CHANNEL, BACKLIGHT_DUTY);
 
   DBG_INFO("Boot: TFT display ready");
 }

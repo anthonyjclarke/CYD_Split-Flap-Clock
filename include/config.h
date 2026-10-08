@@ -9,6 +9,7 @@ constexpr bool USE_24_HOUR_TIME = false;
 constexpr bool RUN_STARTUP_SELF_TEST = true;
 
 // ── Backlight ─────────────────────────────────────────────────────────────────
+constexpr uint8_t BACKLIGHT_CHANNEL  = 0;     // LEDC channel (arduino-esp32 2.x API)
 constexpr uint32_t BACKLIGHT_FREQ    = 5000;
 constexpr uint8_t BACKLIGHT_RES_BITS = 8;
 constexpr uint8_t BACKLIGHT_DUTY     = 200;   // 0–255; ~78% brightness
