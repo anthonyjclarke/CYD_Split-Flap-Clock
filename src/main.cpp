@@ -100,8 +100,8 @@ static void initWiFi() {
   wm.setConfigPortalTimeout(180);  // 3-minute portal timeout
 
   DBG_INFO("Boot: connecting to WiFi...");
-  DBG_INFO("WiFi: AP fallback SSID '%s', portal timeout 180s", WIFI_AP_NAME);
-  if (!wm.autoConnect(WIFI_AP_NAME)) {
+  DBG_INFO("WiFi: AP fallback SSID '%s', portal timeout 180s", AP_NAME);
+  if (!wm.autoConnect(AP_NAME)) {
     DBG_ERROR("WiFi connect failed — restarting");
     delay(1000);
     ESP.restart();
@@ -254,7 +254,7 @@ static void updateClock() {
 void setup() {
   Serial.begin(115200);
   delay(50);
-  DBG_INFO("Boot: Split-flap clock starting");
+  DBG_INFO("Boot: %s %s starting", PROJECT_NAME, FIRMWARE_VERSION);
   initDisplay();
   initCells();
   initTextCells();

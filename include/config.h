@@ -1,7 +1,12 @@
 #pragma once
 
+// ── Firmware identity ─────────────────────────────────────────────────────────
+// Read by the web installer CI (manifest name/version) and reported by Improv.
+#define FIRMWARE_VERSION "1.0.0-dev"
+#define PROJECT_NAME     "CYD_Split-Flap-Clock"  // frozen: Improv + manifest name
+
 // ── WiFi ─────────────────────────────────────────────────────────────────────
-#define WIFI_AP_NAME "SplitFlapClock"
+#define AP_NAME "SplitFlapClock"   // WiFiManager setup hotspot
 
 // ── Timezone ──────────────────────────────────────────────────────────────────
 #define TIMEZONE "Australia/Sydney"
