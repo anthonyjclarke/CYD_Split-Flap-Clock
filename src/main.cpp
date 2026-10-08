@@ -6,7 +6,6 @@
 
 #include "config.h"
 #include "debug.h"
-#include "secrets.h"
 #include "splitflap_bitmaps.h"
 #include "SplitFlapCell.h"
 
