@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stdint.h>
+
 // ── Firmware identity ─────────────────────────────────────────────────────────
 // Read by the web installer CI (manifest name/version) and reported by Improv.
 #define FIRMWARE_VERSION "1.0.0-dev"
@@ -7,6 +9,10 @@
 
 // ── WiFi ─────────────────────────────────────────────────────────────────────
 #define AP_NAME "SplitFlapClock"   // WiFiManager setup hotspot
+
+// ── Improv-Serial (web installer WiFi setup + Update detection) ──────────────
+#define IMPROV_SETUP_ENABLED 1
+#define IMPROV_DEVICE_PREFIX "SplitFlap"
 
 // ── Timezone ──────────────────────────────────────────────────────────────────
 #define TIMEZONE "Australia/Sydney"
