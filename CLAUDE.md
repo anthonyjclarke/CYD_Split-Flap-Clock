@@ -1,66 +1,48 @@
-# CLAUDE.md — CYD Split-Flap Clock
+# Project: CYD Split-Flap Clock
 
-## What this project does
+ESP32-2432S028R (CYD) displays a Solari-style airport split-flap animation for HH:MM time. Each digit flips through intermediate characters with a two-phase fade: old top half darkens, new bottom half compresses and brightens. Version 1.0.
 
-Simulates an airport-style Solari split-flap display as an HH:MM clock on the
-ESP32-2432S028R (CYD — Cheap Yellow Display).  Each digit flips through
-intermediate characters with a two-phase animation that mimics the mechanical
-rotation of physical flaps: the old top half fades away as a dark gradient,
-then the new bottom half appears as compressed, brightening character pixels.
+## Target Hardware
 
-## Hardware
+- Board: ESP32-2432S028R (Cheap Yellow Display)
+- Display: ILI9341, 240×320, landscape rotation 1 (effective 320×240)
+- No PSRAM; all bitmaps in PROGMEM flash
 
-- Board: ESP32-2432S028R
-- Display: ILI9341 · 240×320 · landscape rotation 1 → effective 320×240
-- No PSRAM on standard CYD; all bitmap data lives in flash (PROGMEM)
+## Pin Mapping
 
-## Bitmap assets
+| Function | GPIO | Notes |
+|----------|------|-------|
+| CS (display chip select) | 15 | ILI9341 SPI |
+| DC (data/command) | 2 | ILI9341 SPI |
+| RST (reset) | 4 | ILI9341 SPI |
 
-Pre-generated 48×72 RGB565 tiles in `splitflap_cyd_assets/` (PT Sans Narrow
-Bold, rasterised by a prior AI tool).  Run the generator to (re)build the C++
-PROGMEM arrays:
+Standard CYD SPI pins (CLK=14, MOSI=13, MISO=12) use global defaults.
 
+## Libraries
+
+- WiFiManager 2.0.16-rc.1
+- Arduino core ESP32 (stable 2.x)
+- ILI9341_2.4 (or compatible TFT_eSPI variant)
+
+## Assets & Build
+
+Pre-generated 48×72 RGB565 bitmap tiles in PROGMEM. Rebuild with:
 ```bash
-# Clock subset only — fast compile (~160 KB flash)
 python3 tools/generate_splitflap_bitmaps.py "0123456789: "
-
-# Full A–Z + 0–9 subset — all tiles (~510 KB flash)
-python3 tools/generate_splitflap_bitmaps.py
 ```
+Overwrites `include/splitflap_bitmaps.h` and `src/splitflap_bitmaps.cpp`. Clock-only subset (~160 KB).
 
-Both commands overwrite `include/splitflap_bitmaps.h` and
-`src/splitflap_bitmaps.cpp`.
+## Layout & Timing
 
-## Layout (landscape 320×240)
+Layout (landscape 320×240):
+- H0 (hour tens) @ x=24, H1 @ x=80, colon @ x=136, M0 (min tens) @ x=192, M1 @ x=248
+- All tiles 48×72 px with 8 px gaps, y=84
 
-```
-  x=24  x=80  x=136  x=192  x=248
-   H0    H1     :      M0     M1      y=84, tile height 72 px
-```
+Animation: `FLAP_STEPS=4`, `FLAP_STEP_MS=20` → 160 ms per flip (tunable in `config.h`).
 
-All tiles 48×72 px, 8 px gaps.  Colon is a static push at setup; digits are
-`SplitFlapCell` instances ticked every loop().
+## Architecture & Quirks
 
-## Animation timing
-
-`FLAP_STEPS = 4`, `FLAP_STEP_MS = 20` → 160 ms per character flip.
-Tune in `include/config.h`.
-
-## Known issues / quirks
-
-- If `pushImage` produces wrong colours after a library update, add
-  `_sprite->setSwapBytes(false)` in `SplitFlapCell::begin()`.
-- `drawPixel` loops used for bitmap blitting — adequate for 4 cells at 20 ms
-  step intervals but could be replaced with `pushImage` for a speed-up.
-- No touch support in this version.
-
-## Flashing
-
-```
-pio run -t upload -e cyd
-pio device monitor -e cyd
-```
-
-First boot: connect to "SplitFlapClock" AP, enter WiFi credentials.
-Credentials are stored in NVS by WiFiManager; subsequent boots reconnect
-automatically.
+- **Two-phase flip:** old digit's top half fades via dark gradient while new digit's bottom half compresses and brightens. Mimics mechanical flap rotation.
+- **Bitmap blitting:** uses `drawPixel` loops adequate for 4 cells at 20 ms intervals; no `pushImage` because colour swap issues arise post-library-update (add `setSwapBytes(false)` if needed).
+- **NVS:** WiFiManager stores WiFi credentials; first boot spawns "SplitFlapClock" AP.
+- **No PSRAM rule:** every bitmap must live in PROGMEM; no runtime allocation of tile data.
