@@ -46,3 +46,13 @@ Animation: `FLAP_STEPS=4`, `FLAP_STEP_MS=20` → 160 ms per flip (tunable in `co
 - **Bitmap blitting:** uses `drawPixel` loops adequate for 4 cells at 20 ms intervals; no `pushImage` because colour swap issues arise post-library-update (add `setSwapBytes(false)` if needed).
 - **NVS:** WiFiManager stores WiFi credentials; first boot spawns "SplitFlapClock" AP.
 - **No PSRAM rule:** every bitmap must live in PROGMEM; no runtime allocation of tile data.
+
+## Web installer and releases
+
+- Release images come only from CI on a `v*` tag on `main`; never publish a local build.
+- Never put `firmware-merged.bin` in a manifest (it wipes NVS on Update).
+- `PROJECT_NAME` and `partitions_custom.csv` are frozen; a change turns Update into Install / needs an erase.
+- Improv is vendored in `lib/ImprovWiFi`; never add it back to `lib_deps`.
+- `improvTick()` must run at least every ~1 s, including inside any setup wait loop.
+- No filesystem image: tiles are PROGMEM only; don't add a `data/` folder back.
+- Before the next release, clear *Tests owed* in docs/WEB_INSTALLER.md (RUNBOOK 5b).

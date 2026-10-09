@@ -4,6 +4,33 @@ Animated split-flap clock firmware for a Cheap Yellow Display style ESP32 TFT
 module. The display shows time as flipping tiles, with day of week above and
 AM/PM plus date below.
 
+## Install
+
+**[anthonyjclarke.github.io/CYD_Split-Flap-Clock][installer]** installs the
+latest release from the browser – no PlatformIO, no drivers to build. It needs
+desktop Chrome, Edge or Opera.
+
+1. Pick your board – CYD 2.8″ (ESP32-2432S028R).
+2. Plug it in with a USB data cable, click **Connect & install** and choose its
+   port.
+3. On a new board, say yes to erasing it. When flashing finishes, choose
+   **Configure WiFi** and pick your network. Alternatively, join the
+   `SplitFlapClock` hotspot and set WiFi from its portal.
+4. The clock runs its flip self-test, joins WiFi and shows the time after NTP.
+
+A board already running this firmware is recognised and offered **Update**,
+which keeps its WiFi settings. Each [release][releases] also carries the images
+for flashing by hand. `*-firmware.bin` is the app alone, for a web OTA update
+page (this firmware has none yet). `*-merged.bin` is a clean install at `0x0`
+with esptool, and it **erases settings and WiFi**.
+
+Nothing else is needed: no API keys, no filesystem upload. The timezone
+(`Australia/Sydney`) and 12/24-hour mode are compile-time settings in
+`include/config.h`.
+
+[installer]: https://anthonyjclarke.github.io/CYD_Split-Flap-Clock/
+[releases]: https://github.com/anthonyjclarke/CYD_Split-Flap-Clock/releases
+
 ## Current Behaviour
 
 - Runs on a 320x240 ILI9341 CYD display in landscape orientation.
@@ -65,23 +92,20 @@ Monitor serial output:
 pio device monitor
 ```
 
-The current code includes `include/secrets.h`, which is intentionally ignored by
-Git. If it is missing in a fresh checkout, create it with:
+The build needs no `secrets.h`. WiFi is set at runtime through Improv (the web
+installer) or the WiFiManager portal. The platform is pinned to
+`espressif32@6.12.0` (arduino-esp32 2.0.17).
 
-```cpp
-#pragma once
-
-#define SECRET_WIFI_SSID "your-ssid-here"
-#define SECRET_WIFI_PASS "your-password-here"
-```
-
-The current WiFi flow uses the WiFiManager captive portal, so these values are
-only a local placeholder unless the firmware is later changed to seed the portal
-from them.
+Release images come only from CI on a `v*` tag (`.github/workflows/firmware.yml`,
+using [cyd-web-installer](https://github.com/anthonyjclarke/cyd-web-installer)).
+Never publish a local build or a local `_site/`, because they can contain
+whatever is in your local `include/` folder. Installer tests are recorded in
+[`docs/WEB_INSTALLER.md`](docs/WEB_INSTALLER.md).
 
 ## First Run
 
-1. Flash the firmware and open the serial monitor at 115200 baud.
+1. Flash the firmware (or use the web installer above) and open the serial
+   monitor at 115200 baud.
 2. If the ESP32 cannot connect to a saved WiFi network, join the
    `SplitFlapClock` access point.
 3. Use the captive portal to configure WiFi.

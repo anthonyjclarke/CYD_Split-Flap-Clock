@@ -28,6 +28,10 @@ First release with the ESP Web Tools browser installer.
   and `custom_installer_label` / `custom_installer_hint` on the `cyd` env.
 - `Firmware` GitHub Actions workflow calling the shared
   `cyd-web-installer` release workflow; `_site/` gitignored.
+- README **Install** section for the browser installer at
+  https://anthonyjclarke.github.io/CYD_Split-Flap-Clock/, and
+  `docs/WEB_INSTALLER.md` with the smoke-test result (10-10-2026) and the tests
+  still owed.
 
 ### Changed
 - Platform pinned to `espressif32@6.12.0` (arduino-esp32 2.0.17); backlight
