@@ -43,8 +43,6 @@ The PlatformIO environment targets an ESP32 CYD-style board:
 - `tools/generate_splitflap_bitmaps.py` - converts source PNGs into C++ bitmap
   arrays
 - `splitflap_cyd_assets/` - source PNG asset pack
-- `data/splitflap/` - filesystem copies of the PNG tiles; retained for asset
-  reference, but not required by the current firmware path
 - `partitions_custom.csv` - OTA-capable partition table with a SPIFFS partition
 
 ## Building And Uploading

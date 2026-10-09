@@ -40,7 +40,10 @@ First release with the ESP Web Tools browser installer.
   and Connect reliably offers **Update** instead of **Install**.
 
 ### Removed
-- Unused `#include "secrets.h"` – CI builds without it, and no `SECRET_*`
+- Unused `data/splitflap/` (152 PNG copies of the tiles) and
+  `include/splitflap_assets.h`. The firmware never mounted a filesystem; tiles
+  are compiled in from `splitflap_cyd_assets/`. No FS image ships.
+- Unused `#include "secrets.h" – CI builds without it, and no `SECRET_*`
   value is compiled in.
 
 ## [0.1.4] 27-04-2026
