@@ -28,10 +28,12 @@ The project has no OTA, so the `app1` case doesn't apply.
 
 ## Tests owed
 
-Smoke-tested only. Run these on the next real work on this project, or before
-the next release, and tick them off with date and board MAC.
+Nothing owed for 1.0.0. Case 2 passed as the live Update after the release
+(below). Re-run cases 1 and 2 when RUNBOOK 5b's triggers apply (platform,
+partitions, WiFi/Improv or `loop()` timing, NVS keys, a new env, or first OTA).
 
-- [ ] Case 2 – Update on a provisioned board (settings kept)
+- [x] Case 1 – fresh install, erased (10-10-2026, `B0:CB:D8:DA:AE:8C`)
+- [x] Case 2 – Update on a provisioned board, settings kept (10-10-2026, same board)
 
 Case 1 (fresh install) passed on the only board env. Case 3 (`app1`) doesn't
 apply, because the project has no OTA. Case 4 (wrong board) doesn't apply,
@@ -66,3 +68,25 @@ manifest.
 
 The Improv device suffix `CBB0` comes from the Espressif OUI, not the MAC
 tail. This is a known cosmetic issue in the shared copy-in.
+
+---
+
+## Release v1.0.0 (10-10-2026)
+
+Tag `v1.0.0` on `main` (`5e33629`). Release run 37975639246 built and
+published, and `https://anthonyjclarke.github.io/CYD_Split-Flap-Clock/`
+loads. `index.json` and `manifest-cyd.json` show 1.0.0, and the manifest lists
+four parts. The release carries `CYD_Split-Flap-Clock-v1.0.0-cyd-firmware.bin`,
+`…-cyd-merged.bin` and `SHA256SUMS.txt`.
+
+**Live Update, 2.8″ `B0:CB:D8:DA:AE:8C` (case 2).** The board was provisioned
+and running the CI `1.0.0-dev` image from the smoke test. From the live page,
+Connect offered **Update CYD_Split-Flap-Clock** with no erase question. The
+boot log afterwards showed:
+
+- `CYD_Split-Flap-Clock 1.0.0` and `Running from app0`
+- WiFi rejoined from the saved NVS credentials, with no portal
+- NTP set
+- no crash
+
+Pass.
