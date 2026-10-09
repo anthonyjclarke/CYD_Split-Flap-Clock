@@ -11,6 +11,11 @@
 
 ## [1.1.0] Unreleased
 
+### Fixed
+- Improv device name now ends in the MAC's last two bytes (`SplitFlap-AE8C`),
+  not the Espressif vendor prefix (`-CBB0`). Re-copied
+  `src/network/improv_setup.cpp` from cyd-web-installer `9457ba6`.
+
 ## [1.0.0] 10-10-2026
 
 First release with the ESP Web Tools browser installer.
