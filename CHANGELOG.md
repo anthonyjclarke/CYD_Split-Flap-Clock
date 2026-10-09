@@ -34,6 +34,11 @@ First release with the ESP Web Tools browser installer.
   back on the 2.x LEDC API (`ledcSetup` / `ledcAttachPin`, channel 0).
 - `WIFI_AP_NAME` renamed to `AP_NAME` (the installer page reads it).
 
+### Fixed
+- Improv re-copied from cyd-web-installer `efe7cbd`: each packet now starts on
+  a new line, so noise when Chrome opens the port no longer swallows the reply
+  and Connect reliably offers **Update** instead of **Install**.
+
 ### Removed
 - Unused `#include "secrets.h"` – CI builds without it, and no `SECRET_*`
   value is compiled in.
