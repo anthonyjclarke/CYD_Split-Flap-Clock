@@ -8,15 +8,49 @@
 - Add optional date formats, such as `DD MMM YYYY`, `MMM DD YYYY`, or ISO style.
 - Add a brief DST/timezone diagnostic line to serial output after NTP sync.
 - Colour options for Display (day, time, am/pm and date), configurable in config.h
-- Add Version numbering
 
-## Unreleased
+## [1.0.0] 10-10-2026
+
+First release with the ESP Web Tools browser installer.
 
 ### Added
 - Startup self-test flips all animated time, day, AM/PM, and date cells to a
   diagnostic pattern, clears them, then lets the live clock roll in after NTP.
+- `FIRMWARE_VERSION` (`1.0.0-dev`) and `PROJECT_NAME` (`CYD_Split-Flap-Clock`,
+  frozen) in `include/config.h`; the version is logged at boot.
+- Improv-Serial, always on (vendored `lib/ImprovWiFi` with the parser fix, plus
+  `src/network/improv_setup.*`): WiFi setup from the installer dialog, and
+  Connect offers **Update** on a board that already runs this firmware.
+  Improv is serviced in `loop()`, the startup self-test, a now non-blocking
+  WiFiManager portal, and the NTP wait (replaces `waitForSync(30)`).
+- Boot log line `Running from app0|app1`.
+- `tools/merge_bin.py` post-script (`flash_parts.json`, `firmware-merged.bin`)
+  and `custom_installer_label` / `custom_installer_hint` on the `cyd` env.
+- `Firmware` GitHub Actions workflow calling the shared
+  `cyd-web-installer` release workflow; `_site/` gitignored.
+- README **Install** section for the browser installer at
+  https://anthonyjclarke.github.io/CYD_Split-Flap-Clock/, and
+  `docs/WEB_INSTALLER.md` with the smoke-test result (10-10-2026) and the tests
+  still owed.
 
-## [0.1.4] 2026-04-27
+### Changed
+- Platform pinned to `espressif32@6.12.0` (arduino-esp32 2.0.17); backlight
+  back on the 2.x LEDC API (`ledcSetup` / `ledcAttachPin`, channel 0).
+- `WIFI_AP_NAME` renamed to `AP_NAME` (the installer page reads it).
+
+### Fixed
+- Improv re-copied from cyd-web-installer `efe7cbd`: each packet now starts on
+  a new line, so noise when Chrome opens the port no longer swallows the reply
+  and Connect reliably offers **Update** instead of **Install**.
+
+### Removed
+- Unused `data/splitflap/` (152 PNG copies of the tiles) and
+  `include/splitflap_assets.h`. The firmware never mounted a filesystem; tiles
+  are compiled in from `splitflap_cyd_assets/`. No FS image ships.
+- Unused `#include "secrets.h" – CI builds without it, and no `SECRET_*`
+  value is compiled in.
+
+## [0.1.4] 27-04-2026
 
 ### Changed
 - Demo day-of-week and date rows now use split-flap tile cells (not TFT text):
@@ -29,7 +63,7 @@
 - Regenerated `splitflap_bitmaps` with full A–Z set (~510 KB flash) required
   for letter tiles
 
-## [0.1.3] 2026-04-27
+## [0.1.3] 27-04-2026
 
 ### Added
 - Demo mode now shows day-of-week label above and DD MMM YYYY date below the
@@ -42,14 +76,14 @@
 - Separated `initDemo()` (called once in `setup()`) from `updateDemo()` so the
   initial fill is guaranteed to run before the first 2.5 s interval elapses
 
-## [0.1.2] 2026-04-27
+## [0.1.2] 27-04-2026
 
 ### Added
 - `DEMO_MODE` define in `config.h`: skips WiFi/NTP and randomly flips all four
   digit cells every 2.5 s (`DEMO_CHANGE_MS`) to showcase the animation without
   needing network access. Comment out to restore clock mode.
 
-## [0.1.1] 2026-04-27
+## [0.1.1] 27-04-2026
 
 ### Fixed
 - ESP32 Arduino core 3.x compatibility: replace deprecated `ledcSetup`/`ledcAttachPin`
@@ -59,7 +93,7 @@
 - Remove non-existent `wm.setAPName()` call (AP name is already passed to `autoConnect`)
 - Remove unused `BACKLIGHT_CHANNEL` constant from `config.h`
 
-## [0.1.0] 2026-04-27
+## [0.1.0] 27-04-2026
 
 ### Added
 - Initial project scaffold: `platformio.ini`, `partitions_custom.csv`, debug/config headers

@@ -3,10 +3,11 @@
 #include <TFT_eSPI.h>
 #include <WiFiManager.h>
 #include <ezTime.h>
+#include <esp_ota_ops.h>
 
 #include "config.h"
 #include "debug.h"
-#include "secrets.h"
+#include "network/improv_setup.h"
 #include "splitflap_bitmaps.h"
 #include "SplitFlapCell.h"
 
@@ -43,8 +44,9 @@ static void initDisplay() {
   tft.fillScreen(SCREEN_BG);
 
   DBG_INFO("Boot: enabling backlight...");
-  ledcAttach(TFT_BL, BACKLIGHT_FREQ, BACKLIGHT_RES_BITS);
-  ledcWrite(TFT_BL, BACKLIGHT_DUTY);
+  ledcSetup(BACKLIGHT_CHANNEL, BACKLIGHT_FREQ, BACKLIGHT_RES_BITS);
+  ledcAttachPin(TFT_BL, BACKLIGHT_CHANNEL);
+  ledcWrite(BACKLIGHT_CHANNEL, BACKLIGHT_DUTY);
 
   DBG_INFO("Boot: TFT display ready");
 }
@@ -99,8 +101,20 @@ static void initWiFi() {
   wm.setConfigPortalTimeout(180);  // 3-minute portal timeout
 
   DBG_INFO("Boot: connecting to WiFi...");
-  DBG_INFO("WiFi: AP fallback SSID '%s', portal timeout 180s", WIFI_AP_NAME);
-  if (!wm.autoConnect(WIFI_AP_NAME)) {
+  DBG_INFO("WiFi: AP fallback SSID '%s', portal timeout 180s", AP_NAME);
+#if IMPROV_SETUP_ENABLED
+  // Non-blocking portal so Improv can take credentials over USB meanwhile.
+  wm.setConfigPortalBlocking(false);
+#endif
+  bool connected = wm.autoConnect(AP_NAME);
+#if IMPROV_SETUP_ENABLED
+  while (!connected && wm.getConfigPortalActive()) {
+    if (wm.process()) { connected = true; break; }
+    improvTick();  // restarts once Improv credentials connect
+    delay(5);
+  }
+#endif
+  if (!connected) {
     DBG_ERROR("WiFi connect failed — restarting");
     delay(1000);
     ESP.restart();
@@ -113,7 +127,13 @@ static void initTime() {
   myTZ.setLocation(F(TIMEZONE));
   DBG_INFO("Boot: time display mode %s", USE_24_HOUR_TIME ? "24-hour" : "12-hour");
   DBG_INFO("Boot: syncing NTP...");
-  waitForSync(30);   // 30 s timeout; carries on regardless
+  // Same as waitForSync(30), but keeps Improv answering during the wait.
+  uint32_t syncStart = millis();
+  while (timeStatus() != timeSet && millis() - syncStart < 30000) {
+    events();
+    improvTick();
+    delay(25);
+  }
   if (timeStatus() == timeSet) {
     DBG_INFO("NTP: time set, %s", myTZ.dateTime().c_str());
   } else {
@@ -160,6 +180,7 @@ static bool anyCellAnimating() {
 static void waitForCellAnimations() {
   while (anyCellAnimating()) {
     tickAllCells(millis());
+    improvTick();
     delay(1);
   }
 }
@@ -253,7 +274,9 @@ static void updateClock() {
 void setup() {
   Serial.begin(115200);
   delay(50);
-  DBG_INFO("Boot: Split-flap clock starting");
+  DBG_INFO("Boot: %s %s starting", PROJECT_NAME, FIRMWARE_VERSION);
+  improvBegin();   // Improv-Serial answers from here on (see improv_setup.h)
+  DBG_INFO("Running from %s", esp_ota_get_running_partition()->label);
   initDisplay();
   initCells();
   initTextCells();
@@ -268,6 +291,7 @@ void loop() {
   uint32_t now = millis();
 
   events();       // ezTime background sync
+  improvTick();   // web installer: device info, WiFi changes
   updateClock();
   tickAllCells(now);
 }

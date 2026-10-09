@@ -1,7 +1,18 @@
 #pragma once
 
+#include <stdint.h>
+
+// ── Firmware identity ─────────────────────────────────────────────────────────
+// Read by the web installer CI (manifest name/version) and reported by Improv.
+#define FIRMWARE_VERSION "1.0.0"
+#define PROJECT_NAME     "CYD_Split-Flap-Clock"  // frozen: Improv + manifest name
+
 // ── WiFi ─────────────────────────────────────────────────────────────────────
-#define WIFI_AP_NAME "SplitFlapClock"
+#define AP_NAME "SplitFlapClock"   // WiFiManager setup hotspot
+
+// ── Improv-Serial (web installer WiFi setup + Update detection) ──────────────
+#define IMPROV_SETUP_ENABLED 1
+#define IMPROV_DEVICE_PREFIX "SplitFlap"
 
 // ── Timezone ──────────────────────────────────────────────────────────────────
 #define TIMEZONE "Australia/Sydney"
@@ -9,6 +20,7 @@ constexpr bool USE_24_HOUR_TIME = false;
 constexpr bool RUN_STARTUP_SELF_TEST = true;
 
 // ── Backlight ─────────────────────────────────────────────────────────────────
+constexpr uint8_t BACKLIGHT_CHANNEL  = 0;     // LEDC channel (arduino-esp32 2.x API)
 constexpr uint32_t BACKLIGHT_FREQ    = 5000;
 constexpr uint8_t BACKLIGHT_RES_BITS = 8;
 constexpr uint8_t BACKLIGHT_DUTY     = 200;   // 0–255; ~78% brightness
