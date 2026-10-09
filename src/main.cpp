@@ -99,9 +99,11 @@ static void initTextCells() {
 static void initWiFi() {
   WiFiManager wm;
   wm.setConfigPortalTimeout(180);  // 3-minute portal timeout
+  wm.setConnectTimeout(WIFI_CONNECT_TIMEOUT_S);
 
   DBG_INFO("Boot: connecting to WiFi...");
-  DBG_INFO("WiFi: AP fallback SSID '%s', portal timeout 180s", AP_NAME);
+  DBG_INFO("WiFi: AP fallback SSID '%s', connect timeout %lus, portal timeout 180s",
+           AP_NAME, WIFI_CONNECT_TIMEOUT_S);
 #if IMPROV_SETUP_ENABLED
   // Non-blocking portal so Improv can take credentials over USB meanwhile.
   wm.setConfigPortalBlocking(false);

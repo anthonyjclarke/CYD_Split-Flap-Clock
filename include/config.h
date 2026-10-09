@@ -9,6 +9,9 @@
 
 // ── WiFi ─────────────────────────────────────────────────────────────────────
 #define AP_NAME "SplitFlapClock"   // WiFiManager setup hotspot
+// Saved-network join timeout. Unset, WiFiManager waits ~60 s with Improv
+// unserviced; the portal (and Improv) take over once this expires.
+constexpr unsigned long WIFI_CONNECT_TIMEOUT_S = 15;
 
 // ── Improv-Serial (web installer WiFi setup + Update detection) ──────────────
 #define IMPROV_SETUP_ENABLED 1

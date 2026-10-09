@@ -12,6 +12,11 @@
 ## [1.1.0] Unreleased
 
 ### Fixed
+- Joining the saved WiFi network now times out after 15 s
+  (`WIFI_CONNECT_TIMEOUT_S`) instead of WiFiManager's default ~60 s. During
+  that wait Improv can't answer, so a Connect from the web installer showed
+  **Install**; the setup portal and Improv now take over 45 s sooner when the
+  network is unreachable.
 - Improv device name now ends in the MAC's last two bytes (`SplitFlap-AE8C`),
   not the Espressif vendor prefix (`-CBB0`). Re-copied
   `src/network/improv_setup.cpp` from cyd-web-installer `9457ba6`.
