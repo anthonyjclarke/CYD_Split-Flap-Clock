@@ -9,7 +9,7 @@
 - Add a brief DST/timezone diagnostic line to serial output after NTP sync.
 - Colour options for Display (day, time, am/pm and date), configurable in config.h
 
-## [1.0.0] Unreleased
+## [1.0.0] 10-10-2026
 
 First release with the ESP Web Tools browser installer.
 
