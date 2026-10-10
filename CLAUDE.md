@@ -1,6 +1,6 @@
 # Project: CYD Split-Flap Clock
 
-ESP32-2432S028R (CYD) Solari-style split-flap clock: animated `HH:MM:SS` tiles, a day-of-week row above, and AM/PM plus `DD MMM YYYY` rows below. Each flip is a two-phase fade: old top half darkens, new bottom half compresses and brightens. Released 1.0.0; `dev` is 1.1.0-dev.
+ESP32-2432S028R (CYD) Solari-style split-flap clock: animated `HH:MM:SS` tiles, a day-of-week row above, and AM/PM plus `DD MMM YYYY` rows below. Each flip is a two-phase fade: old top half darkens, new bottom half compresses and brightens. Released 1.1.0.
 
 ## Target Hardware
 
