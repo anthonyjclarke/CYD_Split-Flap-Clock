@@ -28,13 +28,12 @@ The project has no OTA, so the `app1` case doesn't apply.
 
 ## Tests owed
 
-1.1.0 changed WiFi and Improv timing (RUNBOOK 5b trigger), so cases 1 and 2
-are re-run for it. Case 2 is the live Update from 1.1.0-dev to 1.1.0 after the
-tag. Re-run cases 1 and 2 when the 5b triggers apply again (platform,
+Nothing owed for 1.1.0. It changed WiFi and Improv timing (a RUNBOOK 5b
+trigger), so cases 1 and 2 were re-run and passed. Re-run cases 1 and 2 when the 5b triggers apply again (platform,
 partitions, WiFi/Improv or `loop()` timing, NVS keys, a new env, or first OTA).
 
 - [x] Case 1 – fresh install, erased (1.1.0-dev, 10-10-2026, `B0:CB:D8:DA:AE:8C`)
-- [ ] Case 2 – Update on a provisioned board, settings kept (1.1.0, live page)
+- [x] Case 2 – Update on a provisioned board, settings kept (1.1.0 live page, 10-10-2026, same board)
 
 Case 1 (fresh install) passed on the only board env. Case 3 (`app1`) doesn't
 apply, because the project has no OTA. Case 4 (wrong board) doesn't apply,
@@ -116,3 +115,26 @@ installed with erase, and WiFi set through **Configure WiFi**. Boot log:
 
 Connect then showed "Connected to SplitFlap-AE8C · CYD_Split-Flap-Clock
 1.1.0-dev (ESP32)". Pass.
+
+---
+
+## Release v1.1.0 (10-10-2026)
+
+Tag `v1.1.0` on `main` (`9998763`). Release run 38008277192 built and
+published. The live page, `index.json` and the manifest show 1.1.0, with four
+parts. The release carries `CYD_Split-Flap-Clock-v1.1.0-cyd-firmware.bin`,
+`…-cyd-merged.bin` and `SHA256SUMS.txt`.
+
+**Live Update, 2.8″ `B0:CB:D8:DA:AE:8C` (case 2).** The board was running the
+CI `1.1.0-dev` image. From the live page, Connect offered **Update** with no
+erase question, and the clock came back showing the right local time. Boot
+log:
+
+- `1.1.0`, `SplitFlap-AE8C`, `Running from app0`
+- `connect timeout 15s`
+- WiFi rejoined from NVS
+- timezone `AEST-10AEDT,M10.1.0,M4.1.0/3`
+
+On the first boot, NTP timed out after 30 s and retried in the background. Two
+further boots synced in AEDT within seconds, so that was the network, not the
+firmware. Pass.
