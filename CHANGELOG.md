@@ -12,6 +12,9 @@
 ## [1.1.0] Unreleased
 
 ### Fixed
+- The clock could silently show UTC. ezTime's `setLocation()` fetches the
+  zone from timezoned.rop.nl and gives up on a timeout; the timezone is now a
+  local POSIX rule (`TIMEZONE_POSIX`, Sydney AEST/AEDT) set with `setPosix()`.
 - Joining the saved WiFi network now times out after 15 s
   (`WIFI_CONNECT_TIMEOUT_S`) instead of WiFiManager's default ~60 s. During
   that wait Improv can't answer, so a Connect from the web installer showed

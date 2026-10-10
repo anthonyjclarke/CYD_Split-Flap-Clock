@@ -125,8 +125,8 @@ static void initWiFi() {
 }
 
 static void initTime() {
-  DBG_INFO("Boot: configuring timezone %s", TIMEZONE);
-  myTZ.setLocation(F(TIMEZONE));
+  DBG_INFO("Boot: configuring timezone %s (%s)", TIMEZONE, TIMEZONE_POSIX);
+  myTZ.setPosix(F(TIMEZONE_POSIX));   // local rule, no network lookup
   DBG_INFO("Boot: time display mode %s", USE_24_HOUR_TIME ? "24-hour" : "12-hour");
   DBG_INFO("Boot: syncing NTP...");
   // Same as waitForSync(30), but keeps Improv answering during the wait.

@@ -33,6 +33,7 @@ Animation: `FLAP_STEPS=4`, `FLAP_STEP_MS=20` → 160 ms per flip (tunable in `co
 - **Two-phase flip:** old digit's top half fades via dark gradient while new digit's bottom half compresses and brightens. Mimics mechanical flap rotation.
 - **Bitmap blitting:** uses `drawPixel` loops into each cell's sprite, adequate for all 28 cells at 20 ms steps; no `pushImage` because colour swap issues arise post-library-update (add `setSwapBytes(false)` if needed).
 - **NVS:** WiFiManager stores WiFi credentials; first boot spawns "SplitFlapClock" AP.
+- **Timezone:** never use ezTime `setLocation()` – it needs timezoned.rop.nl and silently stays on UTC on a timeout. Use `TIMEZONE_POSIX` + `setPosix()`.
 - **No PSRAM rule:** every bitmap must live in PROGMEM; no runtime allocation of tile data.
 
 ## Web installer and releases
