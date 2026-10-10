@@ -28,12 +28,13 @@ The project has no OTA, so the `app1` case doesn't apply.
 
 ## Tests owed
 
-Nothing owed for 1.0.0. Case 2 passed as the live Update after the release
-(below). Re-run cases 1 and 2 when RUNBOOK 5b's triggers apply (platform,
+1.1.0 changed WiFi and Improv timing (RUNBOOK 5b trigger), so cases 1 and 2
+are re-run for it. Case 2 is the live Update from 1.1.0-dev to 1.1.0 after the
+tag. Re-run cases 1 and 2 when the 5b triggers apply again (platform,
 partitions, WiFi/Improv or `loop()` timing, NVS keys, a new env, or first OTA).
 
-- [x] Case 1 – fresh install, erased (10-10-2026, `B0:CB:D8:DA:AE:8C`)
-- [x] Case 2 – Update on a provisioned board, settings kept (10-10-2026, same board)
+- [x] Case 1 – fresh install, erased (1.1.0-dev, 10-10-2026, `B0:CB:D8:DA:AE:8C`)
+- [ ] Case 2 – Update on a provisioned board, settings kept (1.1.0, live page)
 
 Case 1 (fresh install) passed on the only board env. Case 3 (`app1`) doesn't
 apply, because the project has no OTA. Case 4 (wrong board) doesn't apply,
@@ -90,3 +91,28 @@ boot log afterwards showed:
 - no crash
 
 Pass.
+
+---
+
+## 1.1.0 – smoke test (10-10-2026)
+
+Changes: a 15 s saved-network connect timeout (was ~60 s with Improv
+unserviced), the Improv name from the MAC tail, and a local POSIX timezone rule.
+
+**Why.** After the 1.0.0 release, the bench board failed to join the saved
+WiFi twice (`AutoConnect: FAILED for 60611 ms`). During that minute Improv was
+silent. The next boot also showed NTP in **UTC**: ezTime's `setLocation()`
+lookup had timed out, so the clock would have shown the wrong time.
+
+**Fresh install, 2.8″ `B0:CB:D8:DA:AE:8C`.** This used the CI preview from run
+38006818104 (`ed62603`, before the timezone fix). The board was erased,
+installed with erase, and WiFi set through **Configure WiFi**. Boot log:
+
+- `1.1.0-dev`, Improv listening as `SplitFlap-AE8C`
+- `connect timeout 15s`, `Running from app0`
+- WiFi joined
+- NTP set, but in UTC – fixed next in `34b11ed`
+- no crash
+
+Connect then showed "Connected to SplitFlap-AE8C · CYD_Split-Flap-Clock
+1.1.0-dev (ESP32)". Pass.
