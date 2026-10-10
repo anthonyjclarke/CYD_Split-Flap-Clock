@@ -28,10 +28,13 @@ The project has no OTA, so the `app1` case doesn't apply.
 
 ## Tests owed
 
-Smoke-tested only. Run these on the next real work on this project, or before
-the next release, and tick them off with date and board MAC.
+1.1.0 changed WiFi and Improv timing (RUNBOOK 5b trigger), so cases 1 and 2
+are re-run for it. Case 2 is the live Update from 1.1.0-dev to 1.1.0 after the
+tag. Re-run cases 1 and 2 when the 5b triggers apply again (platform,
+partitions, WiFi/Improv or `loop()` timing, NVS keys, a new env, or first OTA).
 
-- [ ] Case 2 – Update on a provisioned board (settings kept)
+- [x] Case 1 – fresh install, erased (1.1.0-dev, 10-10-2026, `B0:CB:D8:DA:AE:8C`)
+- [ ] Case 2 – Update on a provisioned board, settings kept (1.1.0, live page)
 
 Case 1 (fresh install) passed on the only board env. Case 3 (`app1`) doesn't
 apply, because the project has no OTA. Case 4 (wrong board) doesn't apply,
@@ -66,3 +69,50 @@ manifest.
 
 The Improv device suffix `CBB0` comes from the Espressif OUI, not the MAC
 tail. This is a known cosmetic issue in the shared copy-in.
+
+---
+
+## Release v1.0.0 (10-10-2026)
+
+Tag `v1.0.0` on `main` (`5e33629`). Release run 37975639246 built and
+published, and `https://anthonyjclarke.github.io/CYD_Split-Flap-Clock/`
+loads. `index.json` and `manifest-cyd.json` show 1.0.0, and the manifest lists
+four parts. The release carries `CYD_Split-Flap-Clock-v1.0.0-cyd-firmware.bin`,
+`…-cyd-merged.bin` and `SHA256SUMS.txt`.
+
+**Live Update, 2.8″ `B0:CB:D8:DA:AE:8C` (case 2).** The board was provisioned
+and running the CI `1.0.0-dev` image from the smoke test. From the live page,
+Connect offered **Update CYD_Split-Flap-Clock** with no erase question. The
+boot log afterwards showed:
+
+- `CYD_Split-Flap-Clock 1.0.0` and `Running from app0`
+- WiFi rejoined from the saved NVS credentials, with no portal
+- NTP set
+- no crash
+
+Pass.
+
+---
+
+## 1.1.0 – smoke test (10-10-2026)
+
+Changes: a 15 s saved-network connect timeout (was ~60 s with Improv
+unserviced), the Improv name from the MAC tail, and a local POSIX timezone rule.
+
+**Why.** After the 1.0.0 release, the bench board failed to join the saved
+WiFi twice (`AutoConnect: FAILED for 60611 ms`). During that minute Improv was
+silent. The next boot also showed NTP in **UTC**: ezTime's `setLocation()`
+lookup had timed out, so the clock would have shown the wrong time.
+
+**Fresh install, 2.8″ `B0:CB:D8:DA:AE:8C`.** This used the CI preview from run
+38006818104 (`ed62603`, before the timezone fix). The board was erased,
+installed with erase, and WiFi set through **Configure WiFi**. Boot log:
+
+- `1.1.0-dev`, Improv listening as `SplitFlap-AE8C`
+- `connect timeout 15s`, `Running from app0`
+- WiFi joined
+- NTP set, but in UTC – fixed next in `34b11ed`
+- no crash
+
+Connect then showed "Connected to SplitFlap-AE8C · CYD_Split-Flap-Clock
+1.1.0-dev (ESP32)". Pass.

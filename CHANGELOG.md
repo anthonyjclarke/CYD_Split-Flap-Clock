@@ -9,6 +9,21 @@
 - Add a brief DST/timezone diagnostic line to serial output after NTP sync.
 - Colour options for Display (day, time, am/pm and date), configurable in config.h
 
+## [1.1.0] 10-10-2026
+
+### Fixed
+- The clock could silently show UTC. ezTime's `setLocation()` fetches the
+  zone from timezoned.rop.nl and gives up on a timeout; the timezone is now a
+  local POSIX rule (`TIMEZONE_POSIX`, Sydney AEST/AEDT) set with `setPosix()`.
+- Joining the saved WiFi network now times out after 15 s
+  (`WIFI_CONNECT_TIMEOUT_S`) instead of WiFiManager's default ~60 s. During
+  that wait Improv can't answer, so a Connect from the web installer showed
+  **Install**; the setup portal and Improv now take over 45 s sooner when the
+  network is unreachable.
+- Improv device name now ends in the MAC's last two bytes (`SplitFlap-AE8C`),
+  not the Espressif vendor prefix (`-CBB0`). Re-copied
+  `src/network/improv_setup.cpp` from cyd-web-installer `9457ba6`.
+
 ## [1.0.0] 10-10-2026
 
 First release with the ESP Web Tools browser installer.

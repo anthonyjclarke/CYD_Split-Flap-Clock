@@ -4,18 +4,25 @@
 
 // ── Firmware identity ─────────────────────────────────────────────────────────
 // Read by the web installer CI (manifest name/version) and reported by Improv.
-#define FIRMWARE_VERSION "1.0.0"
+#define FIRMWARE_VERSION "1.1.0"
 #define PROJECT_NAME     "CYD_Split-Flap-Clock"  // frozen: Improv + manifest name
 
 // ── WiFi ─────────────────────────────────────────────────────────────────────
 #define AP_NAME "SplitFlapClock"   // WiFiManager setup hotspot
+// Saved-network join timeout. Unset, WiFiManager waits ~60 s with Improv
+// unserviced; the portal (and Improv) take over once this expires.
+constexpr unsigned long WIFI_CONNECT_TIMEOUT_S = 15;
 
 // ── Improv-Serial (web installer WiFi setup + Update detection) ──────────────
 #define IMPROV_SETUP_ENABLED 1
 #define IMPROV_DEVICE_PREFIX "SplitFlap"
 
 // ── Timezone ──────────────────────────────────────────────────────────────────
-#define TIMEZONE "Australia/Sydney"
+#define TIMEZONE "Australia/Sydney"   // label only (logs)
+// POSIX rule applied locally with setPosix(). ezTime's setLocation() asks
+// timezoned.rop.nl and silently stays on UTC when that lookup times out.
+// Take the rule from the last line of /usr/share/zoneinfo/<zone>.
+#define TIMEZONE_POSIX "AEST-10AEDT,M10.1.0,M4.1.0/3"
 constexpr bool USE_24_HOUR_TIME = false;
 constexpr bool RUN_STARTUP_SELF_TEST = true;
 
