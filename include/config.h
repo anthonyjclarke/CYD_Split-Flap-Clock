@@ -4,7 +4,7 @@
 
 // ── Firmware identity ─────────────────────────────────────────────────────────
 // Read by the web installer CI (manifest name/version) and reported by Improv.
-#define FIRMWARE_VERSION "1.1.0"
+#define FIRMWARE_VERSION "1.2.0-dev"
 #define PROJECT_NAME     "CYD_Split-Flap-Clock"  // frozen: Improv + manifest name
 
 // ── WiFi ─────────────────────────────────────────────────────────────────────
